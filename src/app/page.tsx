@@ -1,3 +1,6 @@
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 import { db_getBookmarks } from "@/lib/actions";
 import { mockBookmarks, allTags } from "@/lib/mock-data";
 import BookmarkShell from "@/components/BookmarkShell";
@@ -6,6 +9,11 @@ import type { Bookmark } from "@/lib/mock-data";
 export default async function Home() {
   let bookmarks: Bookmark[];
   let tags: string[];
+
+  if (!process.env.DATABASE_URL) {
+    console.warn("DATABASE_URL is not set — falling back to mock data.");
+    return <BookmarkShell initialBookmarks={mockBookmarks} initialTags={allTags} />;
+  }
 
   try {
     bookmarks = await db_getBookmarks();
