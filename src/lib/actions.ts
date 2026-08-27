@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import pool from "@/lib/db";
 import type { Bookmark } from "@/lib/mock-data";
 
@@ -62,5 +63,6 @@ export async function db_createBookmark(
       input.tags,
     ]
   );
+  revalidatePath("/");
   return rowToBookmark(result.rows[0]);
 }
