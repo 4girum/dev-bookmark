@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { CreateBookmarkInput } from "@/lib/actions";
+import { db_fetchUrlMetadata } from "@/lib/actions/metadata";
+import { useDebounce } from "@/lib/useDebounce";
 
 interface AddBookmarkModalProps {
   open: boolean;
@@ -35,10 +37,74 @@ function validate(fields: { title: string; url: string; tags: string }): FormErr
 
 const EMPTY = { title: "", url: "", description: "", tags: "", codeSnippet: "", language: "" };
 
+// A URL is worth fetching metadata for only when it looks complete.
+function isLikelyCompleteUrl(raw: string): boolean {
+  try {
+    const u = new URL(raw.trim());
+    return u.protocol === "https:" || u.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+
 export default function AddBookmarkModal({ open, onClose, onAdd }: AddBookmarkModalProps) {
   const [fields, setFields] = useState(EMPTY);
   const [errors, setErrors] = useState<FormErrors>({});
   const [submitting, setSubmitting] = useState(false);
+
+  // Metadata fetch state
+  const [metaLoading, setMetaLoading] = useState(false);
+  const [metaError, setMetaError] = useState<string | null>(null);
+  // Track which URL we last auto-populated from, so we don't clobber manual edits
+  // on subsequent fetches for the same URL.
+  const [lastFetchedUrl, setLastFetchedUrl] = useState<string | null>(null);
+
+  // Debounce the URL 600ms — gives the user time to finish typing.
+  const debouncedUrl = useDebounce(fields.url, 600);
+
+  // Auto-fetch metadata whenever the debounced URL changes.
+  useEffect(() => {
+    if (!isLikelyCompleteUrl(debouncedUrl)) {
+      setMetaError(null);
+      return;
+    }
+    if (debouncedUrl === lastFetchedUrl) return;
+
+    let cancelled = false;
+    setMetaLoading(true);
+    setMetaError(null);
+
+    db_fetchUrlMetadata(debouncedUrl).then((result) => {
+      if (cancelled) return;
+      setMetaLoading(false);
+      setLastFetchedUrl(debouncedUrl);
+
+      if ("error" in result) {
+        setMetaError(result.error);
+        return;
+      }
+
+      // Only auto-fill fields the user hasn't touched yet.
+      setFields((prev) => ({
+        ...prev,
+        title: prev.title.trim() === "" && result.title ? result.title : prev.title,
+        description:
+          prev.description.trim() === "" && result.description
+            ? result.description
+            : prev.description,
+      }));
+    });
+
+    return () => { cancelled = true; };
+  }, [debouncedUrl, lastFetchedUrl]);
+
+  // Reset lastFetchedUrl when the URL field is cleared.
+  useEffect(() => {
+    if (!fields.url.trim()) {
+      setLastFetchedUrl(null);
+      setMetaError(null);
+    }
+  }, [fields.url]);
 
   // Close on Escape key
   useEffect(() => {
@@ -56,6 +122,9 @@ export default function AddBookmarkModal({ open, onClose, onAdd }: AddBookmarkMo
   function resetForm() {
     setFields(EMPTY);
     setErrors({});
+    setMetaError(null);
+    setMetaLoading(false);
+    setLastFetchedUrl(null);
   }
 
   function handleClose() {
@@ -118,6 +187,52 @@ export default function AddBookmarkModal({ open, onClose, onAdd }: AddBookmarkMo
         <form onSubmit={handleSubmit} noValidate className="flex flex-col overflow-hidden">
           <div className="flex flex-col gap-4 overflow-y-auto px-6 py-5">
 
+            {/* URL — first so metadata can pre-fill title/description */}
+            <div>
+              <label htmlFor="bm-url" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                URL
+              </label>
+              <div className="relative mt-1">
+                <input
+                  id="bm-url"
+                  type="url"
+                  value={fields.url}
+                  onChange={set("url")}
+                  placeholder="https://example.com"
+                  className="w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 pr-8 text-sm text-neutral-900 placeholder-neutral-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
+                />
+                {/* Loading spinner */}
+                {metaLoading && (
+                  <span
+                    aria-label="Fetching metadata…"
+                    className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2"
+                  >
+                    <svg
+                      className="h-4 w-4 animate-spin text-blue-500"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                    </svg>
+                  </span>
+                )}
+              </div>
+              {errors.url && <p className="mt-1 text-xs text-red-500">{errors.url}</p>}
+              {metaError && !errors.url && (
+                <p className="mt-1 text-xs text-amber-500 dark:text-amber-400">
+                  Could not fetch metadata — fill in the fields manually.
+                </p>
+              )}
+              {!metaLoading && !metaError && lastFetchedUrl && (
+                <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+                  ✓ Title and description auto-filled from the page.
+                </p>
+              )}
+            </div>
+
             {/* Title */}
             <div>
               <label htmlFor="bm-title" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
@@ -133,22 +248,6 @@ export default function AddBookmarkModal({ open, onClose, onAdd }: AddBookmarkMo
                 className="mt-1 w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
               />
               {errors.title && <p className="mt-1 text-xs text-red-500">{errors.title}</p>}
-            </div>
-
-            {/* URL */}
-            <div>
-              <label htmlFor="bm-url" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                URL
-              </label>
-              <input
-                id="bm-url"
-                type="url"
-                value={fields.url}
-                onChange={set("url")}
-                placeholder="https://example.com"
-                className="mt-1 w-full rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2 text-sm text-neutral-900 placeholder-neutral-400 focus:border-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-400/30 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100"
-              />
-              {errors.url && <p className="mt-1 text-xs text-red-500">{errors.url}</p>}
             </div>
 
             {/* Description */}

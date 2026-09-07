@@ -13,7 +13,11 @@ Implementation phases covering local mock data, core UI components, dark/light t
     { "wave": 4, "tasks": ["4"] },
     { "wave": 5, "tasks": ["5"] },
     { "wave": 6, "tasks": ["6"] },
-    { "wave": 7, "tasks": ["7"] }
+    { "wave": 7, "tasks": ["7"] },
+    { "wave": 8, "tasks": ["8"] },
+    { "wave": 9, "tasks": ["9"] },
+    { "wave": 10, "tasks": ["10"] },
+    { "wave": 11, "tasks": ["11"] }
   ]
 }
 ```
@@ -50,6 +54,24 @@ Implementation phases covering local mock data, core UI components, dark/light t
   - Add client-side validation: title must be non-empty (max 200 chars), URL must match a URL pattern when provided, tags must each be ≤ 50 chars; display inline field-level error messages styled with `text-red-500 text-xs`.
   - On valid submit, call the `db_createBookmark` Server Action, optimistically prepend the new bookmark to the displayed list using `useOptimistic`, and close the modal on success.
   - Add an "Add Bookmark" button in the main content header (top-right of the search bar row) that opens the modal; the button should be accessible with `aria-haspopup="dialog"`.
+
+- [x] 8. Phase 1 – Landing Page & Routing 🚀
+  - Move the main bookmark dashboard from `src/app/page.tsx` to a new route at `src/app/bookmarks/page.tsx`, preserving all imports, Server Actions, and `export const dynamic = "force-dynamic"` settings.
+  - Create a new landing page at `src/app/page.tsx` with a hero section (title, description, and "Get Started" CTA linking to `/bookmarks`), styled with Tailwind CSS to match the existing dark theme.
+  - Add a back-to-home link in `src/components/Sidebar.tsx` via a `link` property on the relevant `navItems` entry.
+
+- [x] 9. Phase 2 – Supabase Authentication 🔐
+  - Configure Supabase Auth with Email and Google OAuth providers.
+  - Protect the `/bookmarks` route so only authenticated users can access it; redirect unauthenticated visitors to the landing page.
+  - Implement user-owned bookmark CRUD: scope all database queries to `auth.uid()` so each user sees and manages only their own bookmarks.
+
+- [x] 10. Phase 3 – Link Metadata Auto-Fetcher & Quick Actions 🔗
+  - On bookmark creation, automatically fetch the page title and description from the provided URL server-side and pre-populate the form fields.
+  - Add a one-click "Copy Code" button to each `BookmarkCard` that copies the code snippet to the clipboard and shows a brief visual confirmation.
+
+- [x] 11. Phase 4 – Bi-directional Infinite Scroll ♾️
+  - Replace the full bookmark list with cursor-based pagination, fetching the next page when the user scrolls near the bottom and the previous page when scrolling near the top.
+  - Implement smooth scroll loading with skeleton placeholders so the UI never jumps during data fetches.
 
 ## Notes
 - Using mock data initially to validate layout before connecting a database.
