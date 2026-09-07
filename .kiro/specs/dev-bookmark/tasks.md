@@ -73,6 +73,11 @@ Implementation phases covering local mock data, core UI components, dark/light t
   - Replace the full bookmark list with cursor-based pagination, fetching the next page when the user scrolls near the bottom and the previous page when scrolling near the top.
   - Implement smooth scroll loading with skeleton placeholders so the UI never jumps during data fetches.
 
+- [ ] 12. Phase 5 - CRUD operation on Bookmarks
+  - Refactor the src/components/AddBookmarkModal.tsx component by renaming it to src/components/BookmarkModal.tsx so that it handles Add/Edit operations all together.
+  - Enable bookmark cards to be editable. User clicks on edit icon on bookmark and a modal with edit form opens and a save button updates bookmark data.
+  - Enable delete/remove bookmark. User clicks on delete/track icon on bookmark and confirms a dialog asking for deletion approval.
+
 ## Notes
 - Using mock data initially to validate layout before connecting a database.
 - The dark/light mode toggle uses Tailwind's `dark:` variant classes for styling, and the theme preference is persisted in `localStorage`.
