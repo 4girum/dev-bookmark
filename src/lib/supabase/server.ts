@@ -26,14 +26,13 @@ export async function createClient() {
       getAll() {
         return cookieStore.getAll();
       },
-      setAll(cookiesToSet) {
+      setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
         try {
           cookiesToSet.forEach(({ name, value, options }) =>
             cookieStore.set(name, value, options)
           );
         } catch {
-          // setAll was called from a Server Component — safe to ignore.
-          // Token refresh is handled by the middleware proxy instead.
+          // safe to ignore from Server Components
         }
       },
     },
