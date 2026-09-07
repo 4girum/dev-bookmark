@@ -17,7 +17,8 @@ Implementation phases covering local mock data, core UI components, dark/light t
     { "wave": 8, "tasks": ["8"] },
     { "wave": 9, "tasks": ["9"] },
     { "wave": 10, "tasks": ["10"] },
-    { "wave": 11, "tasks": ["11"] }
+    { "wave": 11, "tasks": ["11"] },
+    { "wave": 11, "tasks": ["12"] }
   ]
 }
 ```
@@ -73,10 +74,11 @@ Implementation phases covering local mock data, core UI components, dark/light t
   - Replace the full bookmark list with cursor-based pagination, fetching the next page when the user scrolls near the bottom and the previous page when scrolling near the top.
   - Implement smooth scroll loading with skeleton placeholders so the UI never jumps during data fetches.
 
-- [ ] 12. Phase 5 - CRUD operation on Bookmarks
-  - Refactor the src/components/AddBookmarkModal.tsx component by renaming it to src/components/BookmarkModal.tsx so that it handles Add/Edit operations all together.
-  - Enable bookmark cards to be editable. User clicks on edit icon on bookmark and a modal with edit form opens and a save button updates bookmark data.
-  - Enable delete/remove bookmark. User clicks on delete/track icon on bookmark and confirms a dialog asking for deletion approval.
+- [x] 12. Phase 5 – Bookmark CRUD Operations ✏️
+  - Refactor `src/components/AddBookmarkModal.tsx` into `src/components/BookmarkModal.tsx`, accepting an optional `bookmarkToEdit` prop that switches the modal between "Add Bookmark" and "Edit Bookmark" modes.
+  - Refactor `BookmarkCard.tsx`: replace text-label copy buttons with icon-only equivalents, and add a kebab (three-dot) menu with ✏️ Edit and 🗑️ Delete options. Delete triggers an inline `alertdialog` confirmation before committing.
+  - Add `db_updateBookmark(id, input)` and `db_deleteBookmark(id)` server actions to `src/lib/actions/bookmarks.ts` with RLS enforcement and `revalidatePath("/bookmarks")`.
+  - Wire the full CRUD flow: `BookmarkShell` owns the unified modal and calls `db_updateBookmark`, propagating the result to `BookmarkFeed` via an `updatedItem` prop patch. `BookmarkFeed` handles optimistic deletes locally via `db_deleteBookmark`.
 
 ## Notes
 - Using mock data initially to validate layout before connecting a database.

@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import type { Bookmark } from "@/lib/mock-data";
 
@@ -181,4 +182,72 @@ export async function db_getPrevPage(
   limit = DEFAULT_PAGE_SIZE
 ): Promise<PaginatedBookmarks> {
   return db_fetchBookmarkPage({ cursor, limit, direction: "prev" });
+}
+
+// ---------------------------------------------------------------------------
+// Update
+// ---------------------------------------------------------------------------
+
+export interface UpdateBookmarkInput {
+  title?: string;
+  description?: string;
+  url?: string;
+  codeSnippet?: string;
+  language?: string;
+  tags?: string[];
+}
+
+/**
+ * Updates an existing bookmark owned by the authenticated user.
+ * RLS ensures a user can only update their own rows.
+ */
+export async function db_updateBookmark(
+  id: string,
+  input: UpdateBookmarkInput
+): Promise<Bookmark> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("bookmarks")
+    .update({
+      ...(input.title !== undefined && { title: input.title }),
+      ...(input.description !== undefined && { description: input.description || null }),
+      ...(input.url !== undefined && { url: input.url || null }),
+      ...(input.codeSnippet !== undefined && { code_snippet: input.codeSnippet || null }),
+      ...(input.language !== undefined && { language: input.language || null }),
+      ...(input.tags !== undefined && { tags: input.tags }),
+    })
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`db_updateBookmark failed: ${error.message}`);
+  }
+
+  revalidatePath("/bookmarks");
+  return rowToBookmark(data as BookmarkRow);
+}
+
+// ---------------------------------------------------------------------------
+// Delete
+// ---------------------------------------------------------------------------
+
+/**
+ * Deletes a bookmark by id for the authenticated user.
+ * RLS ensures a user can only delete their own rows.
+ */
+export async function db_deleteBookmark(id: string): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("bookmarks")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    throw new Error(`db_deleteBookmark failed: ${error.message}`);
+  }
+
+  revalidatePath("/bookmarks");
 }

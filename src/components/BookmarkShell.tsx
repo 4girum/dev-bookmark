@@ -2,44 +2,48 @@
 
 import { useState, useOptimistic, useTransition } from "react";
 import type { Bookmark } from "@/lib/mock-data";
-import type { PaginatedBookmarks } from "@/lib/actions/bookmarks";
+import type { PaginatedBookmarks, UpdateBookmarkInput } from "@/lib/actions/bookmarks";
+import { db_updateBookmark } from "@/lib/actions/bookmarks";
 import BookmarkFeed from "@/components/BookmarkFeed";
 import Sidebar from "@/components/Sidebar";
-import AddBookmarkModal from "@/components/AddBookmarkModal";
+import BookmarkModal from "@/components/BookmarkModal";
 import { useDebounce } from "@/lib/useDebounce";
 import { db_createBookmark, type CreateBookmarkInput } from "@/lib/actions";
 
+// ---------------------------------------------------------------------------
+// Props
+// ---------------------------------------------------------------------------
+
 interface BookmarkShellProps {
-  /** First page of bookmarks from the server, including pagination cursors. */
   initialPage: PaginatedBookmarks;
-  /** All unique tags derived from the initial dataset. */
   initialTags: string[];
-  /** Authenticated user's email, or null when not signed in. */
   userEmail: string | null;
 }
 
-export default function BookmarkShell({
-  initialPage,
-  initialTags,
-  userEmail,
-}: BookmarkShellProps) {
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
+
+export default function BookmarkShell({ initialPage, initialTags, userEmail }: BookmarkShellProps) {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const debouncedQuery = useDebounce(query, 300);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [, startTransition] = useTransition();
 
-  // Optimistic items prepended by the current session's creates.
-  // These are passed directly to BookmarkFeed so they appear instantly
-  // without disrupting the pagination cursor chain.
+  // Modal state — null = closed, undefined = create mode, Bookmark = edit mode.
+  const [modalBookmark, setModalBookmark] = useState<Bookmark | null | undefined>(undefined);
+  const isModalOpen = modalBookmark !== undefined;
+
+  const [, startTransition] = useTransition();
   const [optimisticItems, addOptimistic] = useOptimistic(
     [] as Bookmark[],
     (current: Bookmark[], newBookmark: Bookmark) => [newBookmark, ...current]
   );
 
-  async function handleAddBookmark(input: CreateBookmarkInput): Promise<void> {
-    const tempBookmark: Bookmark = {
+  // ── Create ─────────────────────────────────────────────────────────────
+
+  async function handleAdd(input: CreateBookmarkInput): Promise<void> {
+    const temp: Bookmark = {
       id: `temp-${Date.now()}`,
       title: input.title,
       description: input.description,
@@ -49,20 +53,32 @@ export default function BookmarkShell({
       tags: input.tags,
       createdAt: new Date().toISOString(),
     };
-
     startTransition(async () => {
-      addOptimistic(tempBookmark);
+      addOptimistic(temp);
       await db_createBookmark(input);
     });
   }
 
-  // Total displayed count: optimistic + paginated items loaded so far.
-  // BookmarkFeed tracks its own accumulated count internally; we show
-  // a simple "filtered" indicator in the header via the search bar.
+  // ── Edit ───────────────────────────────────────────────────────────────
+
+  function handleOpenEdit(bookmark: Bookmark) {
+    setModalBookmark(bookmark);
+  }
+
+  // Track the saved bookmark so we can propagate it to the feed.
+  const [savedBookmark, setSavedBookmark] = useState<Bookmark | null>(null);
+
+  async function handleSave(id: string, input: UpdateBookmarkInput): Promise<void> {
+    const updated = await db_updateBookmark(id, input);
+    setSavedBookmark(updated);
+  }
+
+  // ── Render ─────────────────────────────────────────────────────────────
 
   return (
     <div className="flex min-h-screen flex-col bg-neutral-50 dark:bg-neutral-950">
-      {/* ── Mobile top bar ─────────────────────────────────────────── */}
+
+      {/* Mobile top bar */}
       <header className="flex items-center gap-3 border-b border-neutral-200 bg-white px-4 py-3 md:hidden dark:border-neutral-800 dark:bg-neutral-900">
         <button
           type="button"
@@ -81,43 +97,31 @@ export default function BookmarkShell({
             </svg>
           )}
         </button>
-        <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
-          DevBookmark
-        </span>
+        <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">DevBookmark</span>
       </header>
 
       <div className="flex flex-1">
-        {/* ── Sidebar ──────────────────────────────────────────────── */}
-        <div
-          className={[
-            "fixed inset-y-0 left-0 z-30 w-64 overflow-y-auto border-r border-neutral-200 bg-white p-5 transition-transform duration-200 dark:border-neutral-800 dark:bg-neutral-900",
-            "md:static md:z-auto md:flex md:w-[250px] md:translate-x-0",
-            sidebarOpen ? "translate-x-0 shadow-xl" : "-translate-x-full",
-          ].join(" ")}
-        >
+        {/* Sidebar */}
+        <div className={[
+          "fixed inset-y-0 left-0 z-30 w-64 overflow-y-auto border-r border-neutral-200 bg-white p-5 transition-transform duration-200 dark:border-neutral-800 dark:bg-neutral-900",
+          "md:static md:z-auto md:flex md:w-[250px] md:translate-x-0",
+          sidebarOpen ? "translate-x-0 shadow-xl" : "-translate-x-full",
+        ].join(" ")}>
           <Sidebar
             tags={initialTags}
             activeTag={activeTag}
-            onTagSelect={(tag) => {
-              setActiveTag(tag);
-              setSidebarOpen(false);
-            }}
+            onTagSelect={(tag) => { setActiveTag(tag); setSidebarOpen(false); }}
             userEmail={userEmail}
           />
         </div>
 
-        {/* Mobile backdrop */}
         {sidebarOpen && (
-          <div
-            className="fixed inset-0 z-20 bg-black/30 md:hidden"
-            aria-hidden="true"
-            onClick={() => setSidebarOpen(false)}
-          />
+          <div className="fixed inset-0 z-20 bg-black/30 md:hidden" aria-hidden="true" onClick={() => setSidebarOpen(false)} />
         )}
 
-        {/* ── Main content ─────────────────────────────────────────── */}
+        {/* Main content */}
         <main className="flex flex-1 flex-col overflow-hidden">
-          {/* Search bar + Add button */}
+          {/* Search + Add */}
           <div className="border-b border-neutral-200 bg-white px-6 py-4 dark:border-neutral-800 dark:bg-neutral-900">
             <div className="flex items-center gap-3">
               <label htmlFor="search" className="sr-only">Search bookmarks</label>
@@ -138,7 +142,7 @@ export default function BookmarkShell({
                 type="button"
                 aria-haspopup="dialog"
                 aria-label="Add new bookmark"
-                onClick={() => setModalOpen(true)}
+                onClick={() => setModalBookmark(null)}
                 className="shrink-0 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400/50"
               >
                 + Add
@@ -146,13 +150,13 @@ export default function BookmarkShell({
             </div>
           </div>
 
-          {/* Active filter pills */}
+          {/* Filter pills */}
           {(debouncedQuery.trim() || activeTag) && (
             <div className="flex flex-wrap items-center gap-2 px-6 py-2">
               {debouncedQuery.trim() && (
                 <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-0.5 text-xs font-medium text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
                   🔍 &ldquo;{debouncedQuery.trim()}&rdquo;
-                  <button type="button" aria-label="Clear search query" onClick={() => setQuery("")} className="ml-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200">×</button>
+                  <button type="button" aria-label="Clear search" onClick={() => setQuery("")} className="ml-1 text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200">×</button>
                 </span>
               )}
               {activeTag && (
@@ -162,14 +166,12 @@ export default function BookmarkShell({
                 </span>
               )}
               {debouncedQuery.trim() && activeTag && (
-                <button type="button" onClick={() => { setActiveTag(null); setQuery(""); }} className="text-xs text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200">
-                  Clear all
-                </button>
+                <button type="button" onClick={() => { setActiveTag(null); setQuery(""); }} className="text-xs text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200">Clear all</button>
               )}
             </div>
           )}
 
-          {/* Infinite scroll feed */}
+          {/* Feed */}
           <div className="flex-1 overflow-y-auto px-6 pb-10 pt-4">
             <BookmarkFeed
               initialPage={initialPage}
@@ -177,15 +179,20 @@ export default function BookmarkShell({
               activeTag={activeTag}
               optimisticItems={optimisticItems}
               onClearFilters={() => { setActiveTag(null); setQuery(""); }}
+              onEdit={handleOpenEdit}
+              updatedItem={savedBookmark}
             />
           </div>
         </main>
       </div>
 
-      <AddBookmarkModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onAdd={handleAddBookmark}
+      {/* Unified create / edit modal */}
+      <BookmarkModal
+        open={isModalOpen}
+        onClose={() => setModalBookmark(undefined)}
+        bookmarkToEdit={modalBookmark ?? null}
+        onAdd={handleAdd}
+        onSave={handleSave}
       />
     </div>
   );
