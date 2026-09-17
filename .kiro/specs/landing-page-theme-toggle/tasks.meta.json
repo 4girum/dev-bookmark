@@ -1,0 +1,122 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "1.1 Confirm `ThemeProvider` is imported and wraps `{children}` in `RootLayout`": [
+      {
+        "executionId": "53c74cff-7f17-4ac6-afe6-2c3d315a61f9",
+        "chatSessionId": "sess_720aed7a-3176-4736-883c-106dcca21900",
+        "timestamp": 1789037734664
+      },
+      {
+        "executionId": "53c74cff-7f17-4ac6-afe6-2c3d315a61f9",
+        "chatSessionId": "sess_720aed7a-3176-4736-883c-106dcca21900",
+        "timestamp": 1789037759514
+      }
+    ],
+    "1.2 Confirm `<html>` has `suppressHydrationWarning`": [
+      {
+        "executionId": "53c74cff-7f17-4ac6-afe6-2c3d315a61f9",
+        "chatSessionId": "sess_720aed7a-3176-4736-883c-106dcca21900",
+        "timestamp": 1789037737993
+      },
+      {
+        "executionId": "53c74cff-7f17-4ac6-afe6-2c3d315a61f9",
+        "chatSessionId": "sess_720aed7a-3176-4736-883c-106dcca21900",
+        "timestamp": 1789037763854
+      }
+    ],
+    "1. Verify ThemeProvider configuration in `src/app/layout.tsx`": [
+      {
+        "executionId": "53c74cff-7f17-4ac6-afe6-2c3d315a61f9",
+        "chatSessionId": "sess_720aed7a-3176-4736-883c-106dcca21900",
+        "timestamp": 1789037763997
+      }
+    ],
+    "2.1 Verify three theme options are defined and rendered": [
+      {
+        "executionId": "9dc3f61e-b57b-4004-bf93-e88b2c8e0713",
+        "chatSessionId": "sess_bbcb71c2-ecc4-4058-8ee1-ae2d52fd8aab",
+        "timestamp": 1789037813064
+      },
+      {
+        "executionId": "9dc3f61e-b57b-4004-bf93-e88b2c8e0713",
+        "chatSessionId": "sess_bbcb71c2-ecc4-4058-8ee1-ae2d52fd8aab",
+        "timestamp": 1789037844605
+      }
+    ],
+    "2.4 Verify FOUC prevention skeleton": [
+      {
+        "executionId": "9dc3f61e-b57b-4004-bf93-e88b2c8e0713",
+        "chatSessionId": "sess_bbcb71c2-ecc4-4058-8ee1-ae2d52fd8aab",
+        "timestamp": 1789037813503
+      },
+      {
+        "executionId": "9dc3f61e-b57b-4004-bf93-e88b2c8e0713",
+        "chatSessionId": "sess_bbcb71c2-ecc4-4058-8ee1-ae2d52fd8aab",
+        "timestamp": 1789037845068
+      }
+    ],
+    "2.5 Verify dismiss behaviour": [
+      {
+        "executionId": "9dc3f61e-b57b-4004-bf93-e88b2c8e0713",
+        "chatSessionId": "sess_bbcb71c2-ecc4-4058-8ee1-ae2d52fd8aab",
+        "timestamp": 1789037814019
+      },
+      {
+        "executionId": "9dc3f61e-b57b-4004-bf93-e88b2c8e0713",
+        "chatSessionId": "sess_bbcb71c2-ecc4-4058-8ee1-ae2d52fd8aab",
+        "timestamp": 1789037845729
+      }
+    ],
+    "2.2 Verify selecting an option calls `setTheme` and closes the dropdown": [
+      {
+        "executionId": "9dc3f61e-b57b-4004-bf93-e88b2c8e0713",
+        "chatSessionId": "sess_bbcb71c2-ecc4-4058-8ee1-ae2d52fd8aab",
+        "timestamp": 1789037850299
+      },
+      {
+        "executionId": "9dc3f61e-b57b-4004-bf93-e88b2c8e0713",
+        "chatSessionId": "sess_bbcb71c2-ecc4-4058-8ee1-ae2d52fd8aab",
+        "timestamp": 1789037867633
+      }
+    ],
+    "2. Verify `LandingThemeToggle` component at `src/components/LandingThemeToggle.tsx`": [
+      {
+        "executionId": "9dc3f61e-b57b-4004-bf93-e88b2c8e0713",
+        "chatSessionId": "sess_bbcb71c2-ecc4-4058-8ee1-ae2d52fd8aab",
+        "timestamp": 1789037867762
+      }
+    ],
+    "4.1 Confirm no custom localStorage logic exists in `LandingThemeToggle`": [
+      {
+        "executionId": "789a6c32-5617-472e-bca6-06ca3721ad99",
+        "chatSessionId": "sess_511b1724-3662-45ed-9bb4-70c8fa767cab",
+        "timestamp": 1789038120881
+      },
+      {
+        "executionId": "789a6c32-5617-472e-bca6-06ca3721ad99",
+        "chatSessionId": "sess_511b1724-3662-45ed-9bb4-70c8fa767cab",
+        "timestamp": 1789038124628
+      }
+    ],
+    "4. Verify localStorage persistence via next-themes": [
+      {
+        "executionId": "789a6c32-5617-472e-bca6-06ca3721ad99",
+        "chatSessionId": "sess_511b1724-3662-45ed-9bb4-70c8fa767cab",
+        "timestamp": 1789038124698
+      }
+    ],
+    "5. Checkpoint — Ensure all tests pass": [
+      {
+        "executionId": "4e395327-9027-4bed-8ac8-a084b7528f98",
+        "chatSessionId": "sess_9c5e697e-1088-492c-bd66-5e9013782886",
+        "timestamp": 1789038151308
+      },
+      {
+        "executionId": "4e395327-9027-4bed-8ac8-a084b7528f98",
+        "chatSessionId": "sess_9c5e697e-1088-492c-bd66-5e9013782886",
+        "timestamp": 1789043618191
+      }
+    ]
+  }
+}
