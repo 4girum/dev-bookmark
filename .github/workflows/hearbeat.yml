@@ -16,16 +16,19 @@ jobs:
             echo "Error: Secrets are missing!"
             exit 1
           else
-            # Hits the Supabase PostgREST API directly using your Supabase project URL
+            # Updates the last_ping timestamp of row id = 1 via PostgREST PATCH request
             RESPONSE=$(curl -s -L -o /dev/null -w "%{http_code}" \
-              -X GET "${{ secrets.PUBLIC_APP_URL }}/rest/v1/heartbeat?select=id&limit=1" \
+              -X PATCH "${{ secrets.PUBLIC_APP_URL }}/rest/v1/heartbeat?id=eq.1" \
               -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-              -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
+              -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" \
+              -H "Content-Type: application/json" \
+              -H "Prefer: return=minimal" \
+              -d '{"last_ping": "'$(date -u +"%Y-%m-%dT%H:%M:%SZ")'"}')
             
             echo "HTTP Status Code: $RESPONSE"
             
-            if [ "$RESPONSE" -eq 200 ]; then
-              echo "Successfully touched the database! Heartbeat recorded. 💓"
+            if [ "$RESPONSE" -eq 204 ] || [ "$RESPONSE" -eq 200 ]; then
+              echo "Successfully updated the database timestamp! Heartbeat recorded. 💓"
             else
               echo "Failed with HTTP status code: $RESPONSE"
               exit 1
