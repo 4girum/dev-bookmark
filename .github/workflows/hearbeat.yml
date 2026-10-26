@@ -10,16 +10,24 @@ jobs:
   ping-db:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Heartbeat Ping
+      - name: Send Database Heartbeat Ping
         run: |          
           if [ -z "${{ secrets.PUBLIC_APP_URL }}" ] || [ -z "${{ secrets.SUPABASE_ANON_KEY }}" ]; then
-            echo "Secrets are empty!"
+            echo "Error: Secrets are missing!"
             exit 1
           else
-            # This forces PostgREST to authenticate and touch the DB schema layer
-            curl -s -X GET "${{ secrets.PUBLIC_APP_URL }}/rest/v1/" \
+            # Queries the heartbeat table directly via Supabase PostgREST API
+            RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" \
+              -X GET "${{ secrets.PUBLIC_APP_URL }}/rest/v1/heartbeat?select=id&limit=1" \
               -H "apikey: ${{ secrets.SUPABASE_ANON_KEY }}" \
-              -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}" > /dev/null
+              -H "Authorization: Bearer ${{ secrets.SUPABASE_ANON_KEY }}")
             
-            echo "Heartbeat securely sent directly to the API layer."
+            echo "HTTP Status Code: $RESPONSE"
+            
+            if [ "$RESPONSE" -eq 200 ]; then
+              echo "Successfully touched the database! Heartbeat recorded. 💓"
+            else
+              echo "Failed with HTTP status code: $RESPONSE"
+              exit 1
+            fi
           fi
