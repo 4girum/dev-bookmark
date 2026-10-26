@@ -11,5 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Send Heartbeat Ping
-        run: |
-          curl -s "${{ secrets.PUBLIC_APP_URL }}" > /dev/null
+        run: |          
+          if [ -z "${{ secrets.PUBLIC_APP_URL }}" ]; then
+            echo "Secret is empty!"
+            exit 1
+          else
+            curl -s "${{ secrets.PUBLIC_APP_URL }}" > /dev/null
+            echo "Secret is securely loaded and accessible."
+          fi
